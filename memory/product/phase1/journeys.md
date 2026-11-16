@@ -1,0 +1,28 @@
+# Phase 1 journeys
+
+- JRN-1 — steps: open the landing page. expected: "Three slots. One offer. One price.", "$1,090.00", contribution line "$1,038.09", "Take a slot" goes to /s/shipready-sprint.
+- JRN-2 — steps: open /s/shipready-sprint fresh. expected: "Shipready Sprint", "$1,090.00", "3 of 3 open", "test mode", Take a slot button enabled.
+- JRN-3 — steps: click Take a slot. expected: browser goes to a checkout.stripe.com URL; store page now shows "2 of 3 open" (slot held).
+- JRN-4 — steps: POST checkout twice with same x-idem-key. expected: same orderId and sessionId; only one slot held.
+- JRN-5 — steps: POST checkout with no x-idem-key. expected: 400.
+- JRN-6 — steps: 10 concurrent checkouts with distinct keys. expected: at most 3 succeed; rest 409 "sold out"; store shows "Sold out." and no button.
+- JRN-7 — steps: send signed checkout.session.completed (paid, correct amount) for a held order. expected: desk shows 1 close booked, contribution "$1,038.09", closes remaining 0; /proof lists one TEST certificate SR-XXXXXXXXXXXX; /p/<code> shows "Verified".
+- JRN-8 — steps: replay the exact same signed event 5 times. expected: 200 "replay"; still 1 charge row, desk unchanged.
+- JRN-9 — steps: send a webhook with a bad/missing signature. expected: 400; nothing booked.
+- JRN-10 — steps: send signed paid event with wrong amount (or currency eur, or other namespace). expected: nothing booked; order stays reserved.
+- JRN-11 — steps: send signed payment_intent.succeeded for an unknown payment. expected: HTTP 200, recorded as unresolved, no ledger change.
+- JRN-12 — steps: send signed checkout.session.expired for a held order. expected: order expired; store open count goes up by 1.
+- JRN-13 — steps: send checkout.session.async_payment_failed for a held order. expected: order expired; slot released.
+- JRN-14 — steps: create a held order with hold already past expiry, wait for sweep (or trigger). expected: order expired; slot released on its own ship.
+- JRN-15 — steps: open /desk without logging in; call refund API without cookie. expected: redirected to /access; API 401.
+- JRN-16 — steps: enter wrong secret on /access. expected: "Wrong secret."
+- JRN-17 — steps: enter correct secret from test_credentials.md. expected: lands on /desk showing TEST, target "$1,000.00", status panel with webhook URL ending /api/webhooks/stripe.
+- JRN-18 — steps: on desk, partial refund $100 on paid order; deliver signed refund event (succeeded, 10000). expected: refunds "−$100.00", order still paid, certificate still Verified.
+- JRN-19 — steps: click refund again with the same request. expected: no second Stripe refund created.
+- JRN-20 — steps: refund remaining amount; deliver signed refund event. expected: order refunded; contribution for that order −$51.91 (desk total reflects −5191 for a single fully refunded close); /p/<code> shows "REVOKED"; store open count back up by 1.
+- JRN-21 — steps: request a refund larger than remaining. expected: capped to remaining.
+- JRN-22 — steps: send signed charge.dispute.created for a paid order, then charge.dispute.closed status won. expected: disputes line shows the debit then returns to $0.00 net; order state disputed.
+- JRN-23 — steps: open /proof with no certificates. expected: "No certificates yet. Nothing here is invented."
+- JRN-24 — steps: open /p/SR-NOTREAL00000 and /s/not-a-ship. expected: "Nothing at this address."
+- JRN-25 — steps: GET /api/health and /api/openapi.json. expected: {"ok":true}; valid OpenAPI JSON.
+- JRN-26 — steps: view landing, store, desk at 390px wide. expected: no horizontal scrolling; dark theme with lime price.

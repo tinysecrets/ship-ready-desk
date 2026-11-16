@@ -1,0 +1,191 @@
+{
+  "project_info": {
+    "name": "Shipready",
+    "version": "Phase 1",
+    "app_type": "hybrid_fullstack",
+    "frameworks": ["FastAPI", "React", "Tailwind CSS", "shadcn/ui", "Lucide React", "Sonner"],
+    "target_viewport": "Mobile-safe down to 390px up to 1440px+ display"
+  },
+  "design_archetype": {
+    "name": "Dark Brutalist Monospace Ledger",
+    "vibe": "High-density, precision-engineered, ruthless financial transparency, dark minimal",
+    "core_principles": [
+      "Zero fluff: pure typography, 1px rules, sharp boundaries",
+      "Signal over noise: #c6f24e reserved for critical prices, status triggers, and active CTA",
+      "Financial precision: tabular numbers font-variant-numeric: tabular-nums everywhere for figures",
+      "Monospace codes: IDs, hashes, certificate codes, and webhook secrets always set in mono font",
+      "Mandatory disclaimer on money: Every monetary figure labelled 'estimated / ledger-derived, not bank settlement'"
+    ]
+  },
+  "colors": {
+    "theme": "dark",
+    "palette": {
+      "bg": "#0b0b0d",
+      "fg": "#e9e9ee",
+      "dim": "#8a8a94",
+      "line": "#23232a",
+      "signal": "#c6f24e",
+      "signal_hover": "#b2df3b",
+      "signal_muted": "rgba(198, 242, 78, 0.12)",
+      "danger": "#ff5555",
+      "danger_muted": "rgba(255, 85, 85, 0.12)",
+      "warning": "#ffb86c",
+      "warning_muted": "rgba(255, 184, 108, 0.12)",
+      "card_bg": "#121216",
+      "card_border": "#23232a"
+    },
+    "tailwind_mappings": {
+      "background": "#0b0b0d",
+      "foreground": "#e9e9ee",
+      "muted": "#8a8a94",
+      "border": "#23232a",
+      "primary": "#c6f24e",
+      "primary_foreground": "#0b0b0d"
+    }
+  },
+  "typography": {
+    "font_family_body": "JetBrains Mono, Space Mono, IBM Plex Mono, Menlo, monospace",
+    "font_family_heading": "Space Grotesk, Syne, Inter, sans-serif",
+    "font_family_code": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    "hierarchy": {
+      "hero_title": "text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#e9e9ee]",
+      "price_huge": "text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-[#c6f24e] tabular-nums",
+      "section_heading": "text-2xl sm:text-3xl font-bold tracking-tight text-[#e9e9ee]",
+      "subsection_heading": "text-lg sm:text-xl font-semibold text-[#e9e9ee]",
+      "body": "text-sm sm:text-base text-[#8a8a94] leading-relaxed",
+      "label": "text-xs font-mono uppercase tracking-widest text-[#8a8a94]",
+      "mono_data": "font-mono text-xs sm:text-sm text-[#e9e9ee] tabular-nums"
+    }
+  },
+  "surface_and_borders": {
+    "container_style": "bg-[#0b0b0d] border border-[#23232a] rounded-none p-6 sm:p-8",
+    "card_style": "bg-[#121216] border border-[#23232a] rounded-none p-5 sm:p-6 transition-colors hover:border-[#383842]",
+    "table_style": "w-full text-left border-collapse border border-[#23232a]",
+    "table_header": "bg-[#121216] border-b border-[#23232a] text-[#8a8a94] text-xs uppercase tracking-wider p-3 font-mono",
+    "table_cell": "border-b border-[#23232a] p-3 text-sm text-[#e9e9ee] font-mono tabular-nums"
+  },
+  "interactive_components": {
+    "button_primary": "bg-[#c6f24e] hover:bg-[#b2df3b] text-[#0b0b0d] font-bold py-3 px-6 rounded-none text-sm tracking-wide transition-all active:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed",
+    "button_secondary": "bg-transparent border border-[#23232a] hover:border-[#8a8a94] text-[#e9e9ee] hover:text-white font-medium py-3 px-6 rounded-none text-sm transition-all",
+    "button_danger": "bg-[#ff5555] hover:bg-[#e04848] text-white font-bold py-2 px-4 rounded-none text-xs transition-all",
+    "input_field": "bg-[#121216] border border-[#23232a] focus:border-[#c6f24e] focus:outline-none text-[#e9e9ee] px-4 py-3 rounded-none text-sm w-full font-mono placeholder:text-[#55555e]",
+    "badge_live": "bg-[#c6f24e]/10 text-[#c6f24e] border border-[#c6f24e]/30 text-xs px-2.5 py-1 rounded-none font-mono uppercase tracking-wider inline-flex items-center gap-1.5",
+    "badge_test": "bg-[#ffb86c]/10 text-[#ffb86c] border border-[#ffb86c]/30 text-xs px-2.5 py-1 rounded-none font-mono uppercase tracking-wider inline-flex items-center gap-1.5",
+    "badge_revoked": "bg-[#ff5555]/10 text-[#ff5555] border border-[#ff5555]/30 text-xs px-2.5 py-1 rounded-none font-mono uppercase tracking-wider inline-flex items-center gap-1.5"
+  },
+  "routes_specification": {
+    "landing": {
+      "path": "/",
+      "title": "Three slots. One offer. One price.",
+      "components": [
+        "Minimal header with logo & proof link",
+        "Hero section with $1,090.00 price in big signal color (#c6f24e)",
+        "Arithmetic block explaining $1,038.09 net contribution per close",
+        "Offer details: 'Shipready Sprint' scope & delivery promise",
+        "Primary CTA button: 'Take a slot' linking to /s/shipready-sprint",
+        "Footer with disclaimers and operator portal link (/access)"
+      ]
+    },
+    "store": {
+      "path": "/s/:slug",
+      "title": "Storefront Slot Checkout",
+      "states": [
+        "Open state: 'N of 3 open', test-mode badge if test, 'Take a slot' button driving Stripe checkout",
+        "Sold out state: 'Sold out. 3 of 3 slots claimed.', CTA disabled",
+        "Payments not configured state: 'Payments not configured.' banner with instructions",
+        "Confirmation state (?ok=1): Success banner linking directly to issued certificate /p/:code"
+      ]
+    },
+    "access": {
+      "path": "/access",
+      "title": "Operator Desk Verification",
+      "components": [
+        "Minimal secret input field",
+        "Error state: 'Wrong secret.' in danger style",
+        "Submit action routing to /desk on success with persistence"
+      ]
+    },
+    "desk": {
+      "path": "/desk",
+      "title": "Operator Command Desk",
+      "components": [
+        "Metric tiles: Total Contribution vs $1,000 target, Closes Booked, Closes Remaining",
+        "Financial Compute Breakdown: Gross, Refunds, Disputes, Fees (Actual vs Est)",
+        "Orders Table: state, amount, refunded, certificate code link, full/partial refund action triggers",
+        "Status Panel: Operating mode (LIVE/TEST), Webhook URL with copy tool, Webhook secret status, Last webhook received time/type, Unresolved events count",
+        "Sweep trigger action button"
+      ]
+    },
+    "proof": {
+      "path": "/proof",
+      "title": "Proof Wall of Certificates",
+      "components": [
+        "Filter/Sort list of issued certificates (newest first)",
+        "Badges for LIVE / TEST / REVOKED",
+        "Empty state: 'No certificates yet. Nothing here is invented.'"
+      ]
+    },
+    "certificate": {
+      "path": "/p/:code",
+      "title": "Public Proof Certificate",
+      "components": [
+        "Verification badge: Verified / REVOKED",
+        "Mode: LIVE or TEST",
+        "Verified contribution arithmetic amount",
+        "Issued timestamp in ISO/UTC string",
+        "Cryptographic code copy trigger"
+      ]
+    },
+    "not_found": {
+      "path": "*",
+      "title": "404",
+      "components": [
+        "404 error header: 'Nothing at this address.'",
+        "Monospace error log view",
+        "Return link to landing /"
+      ]
+    }
+  },
+  "data_testid_rules": {
+    "mandatory": true,
+    "format": "kebab-case",
+    "key_elements": [
+      "landing-take-slot-button",
+      "store-slot-count-badge",
+      "store-checkout-button",
+      "store-sold-out-message",
+      "store-payment-unconfigured-message",
+      "store-confirmation-link",
+      "access-secret-input",
+      "access-submit-button",
+      "access-error-message",
+      "desk-contribution-metric",
+      "desk-closes-booked-metric",
+      "desk-closes-remaining-metric",
+      "desk-orders-table",
+      "desk-refund-button",
+      "desk-webhook-url-copy",
+      "desk-sweep-button",
+      "proof-certificate-card",
+      "proof-empty-state",
+      "certificate-status-badge",
+      "certificate-contribution-value",
+      "not-found-heading"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the dark minimal palette (#0b0b0d background, #e9e9ee text, #8a8a94 dim, #23232a border, #c6f24e signal).",
+    "Do NOT add rounded rounded-lg or rounded-xl curves — keep borders sharp (rounded-none or max rounded-sm) to fit the brutalist ledger archetype.",
+    "Every money figure MUST include the disclaimer text: 'estimated / ledger-derived, not bank settlement'.",
+    "All numerical values and dollar amounts must have className 'tabular-nums font-mono'.",
+    "Use sonner for notifications and toasts.",
+    "Ensure all interactive components have proper data-testid attributes as defined in data_testid_rules."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": {
+    "no_ai_slop": true,
+    "dark_minimal_only": true,
+    "use_tabular_numbers": true,
+    "no_images_required": true,
+    "mobile_safe": "390px"
+  }
+}

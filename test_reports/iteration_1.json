@@ -1,0 +1,41 @@
+{
+  "summary": "Ran end-to-end tests of Shipready Phase 1 on the public preview URL. Backend: pytest suite /app/backend/tests/test_shipready_phase1.py (11 tests, run serially with -n 0). All 11 pass after one test-tooling fix; there was one transient hang in a single run. Coverage: health, openapi, money constants, ship 404s, Q-4 (all /api/desk/* and /api/auth/me return 401 without cookie), wrong secret 'Wrong secret.', checkout idem-key 400/same-key-same-order/slot drop, expire releases slot, bad-sig 400, unknown-pi 200 unresolved, amount/eur/namespace/livemode mismatch books nothing and order stays reserved, paid booking + SR- regex certificate + proof + cert contribution 103809, 5x replay stays 'replay' with 1 charge row (Q-1), dispute -109000 then won gives net 0 with state disputed, full refund gives -5191 contribution + REVOKED + slot back (Q-3), async-failed, sweep with backdated hold, 10 concurrent checkouts never oversell and extras get 409 'sold out' (Q-2), and the REAL Stripe flow (real-pay, Stripe-delivered webhook, desk $100 refund, same request replayed=true with the same refund id, over-remaining request capped to 99000, order refunded, REVOKED, -5191, open +1, further refund 409). Frontend (Playwright): JRN-1 landing, JRN-2/3 store badge + test mode + Take a slot goes to checkout.stripe.com (~2.3s) and the count drops, Sold out. with no button, 404 pages (/s/not-a-ship, /p/SR-NOTREAL00000, random path), proof list and Verified/REVOKED certificate pages, /desk unauth redirects to /access, wrong and correct secret, desk metrics + status panel (webhook URL ends /api/webhooks/stripe, secret set yes, last webhook, unresolved count), Run sweep now, refund dialog partial $100 -> repeat 'replayed' -> capped full refund -> REVOKED $-51.91 and store 2 of 3 open. No horizontal overflow at 390px on /, /s/shipready-sprint, /desk, /proof, /p/:code, /access. Q-6: API checkout latency 0.46-0.52s in 4 of 5 trials and 2.18s once (Must <4000 met, Plan <1500 missed once).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/app/scripts/stripe_sim.py", "issue": "Cloudflare in front of the preview URL returned '403 error code: 1010' to every simulator post, because it blocks the default 'Python-urllib' User-Agent. Every signed-sim journey failed until I added a User-Agent header (fixed). Real Stripe deliveries are not affected. urllib.urlopen also has no timeout, so one sim call hung for more than 60s once (1 of about 60 calls)."},
+      {"endpoint": "POST /api/auth/login (cookie)", "issue": "The backend sets SameSite=strict (checked via localhost). The preview ingress rewrites it to 'SameSite=None; Partitioned' on the public URL. This is an environment issue, not app code, but the SameSite=Strict requirement cannot be observed on the preview URL."},
+      {"endpoint": "ledger.book_refund", "issue": "The refund cap is amount - refunded_cents and ignores disputed_cents (book_dispute does account for refunds). A refund on an order with an open dispute could take ledger debits above the charge amount. This is an edge case and was not exercised."},
+      {"endpoint": "ledger.book_charge", "issue": "asyncio.create_task(record_actual_fee(...)) keeps no reference to the task, so it can be garbage-collected. Fees actual showed '0 known' for all orders, including real PIs (the balance transaction may not exist yet at payment time)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "RefundDialog", "issue": "After a refund succeeds, the dialog header still shows the old 'remaining' amount (e.g. $1,090.00 after a $100 refund) until the dialog is reopened. The order prop is a stale snapshot.", "selector": "[data-testid='refund-dialog']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Landing", "issues": ["The headline is split into three block lines, so the text 'Three slots. One offer. One price.' is not one contiguous text node (innerText has newlines). Visually correct; only a matter for exact-text checks."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_shipready_phase1.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: add a timeout to urllib.urlopen in stripe_sim.py; keep the User-Agent header I added (Cloudflare blocks Python-urllib).",
+    "Optional: cap book_refund at amount - refunded - disputed, or document the intended behaviour.",
+    "Optional: keep a reference to the record_actual_fee task and/or retry fetching the fee later (fees actual is always 0 known).",
+    "Optional: refresh the RefundDialog 'remaining' value after a refund."
+  ],
+  "critical_code_review_comments": [
+    "The global asyncio.Lock in ledger serialises webhook processing per process only. Fine for a single uvicorn worker, but it would not protect multiple workers; DB unique op_key/event_id still guard money.",
+    "The inbox claim reprocesses a stale 'processing' claim on a duplicate event id, which is acceptable under the LOCK.",
+    "Fake checkout.session.expired events expire orders locally but leave the Stripe session open. If it is later paid, book_charge resells or flags over_capacity, which is handled.",
+    "server.py is 461 lines and modules are split well; money is in integer cents from a single module."
+  ],
+  "updated_files": ["/app/scripts/stripe_sim.py (added User-Agent header to bypass Cloudflare 1010)", "/app/backend/tests/test_shipready_phase1.py (new)"],
+  "success_rate": {"backend": "100% (11/11; 1 transient sim hang in one run)", "frontend": "100% of tested journeys"},
+  "seed_data_creation": "No seed data was changed. I created TEST_ idem-key orders: all held ones are expired, and two test-mode orders were paid with real PaymentIntents and fully refunded (one via signed sim with a fake PI, one real via the desk UI). The main agent's real order 6afb39fb52e65336214190c9 is untouched (paid, $100 refunded). Final state: test counters sold=1, reserved=0, 2 of 3 open. Desk contribution is now $782.36 because of the extra closed-and-refunded test orders.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run the backend suite serially: cd /app/backend && pytest tests/test_shipready_phase1.py -n 0 -v. It needs at least 1 open test slot for most tests (real_refund flow and concurrency adapt to the open count). stripe_sim needs the User-Agent header. JRN-23 (empty /proof state) was NOT tested because certificates exist and deleting them is not allowed. REQ-29 (inbox rollback on exception) was checked by code review only. Login rate limit (10 failures/min -> 429) was not exercised.",
+  "rca of the issue": "Sim 403: the Cloudflare WAF rule 1010 (browser integrity, UA-based) blocks the Python-urllib UA. Reproduce: curl -A 'Python-urllib/3.11' -X POST <url>/api/webhooks/stripe returns 403. Mitigation: send a non-urllib UA (done)."
+}

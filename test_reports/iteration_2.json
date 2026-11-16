@@ -1,0 +1,38 @@
+{
+  "summary": "Phase 2 testing (AI drafts outbox and go-live readiness) plus a Phase 1 regression, all on the public preview URL. Phase 1 regression: test_shipready_phase1.py 11/11 passed, run before the reset. Phase 2 backend: new test_shipready_phase2_drafts.py 21/21 passed. It covers: JRN-34 (all 10 new routes return 401 without a cookie); openapi lists all new routes; JRN-27 parsing ('2 saved · 1 lines skipped'); reset-test with a wrong confirm returns 400; JRN-37 (the x-simulate-ai-failure header returns 503 'Draft failed — try again' and no draft is saved); 404 for unknown or invalid ids; JRN-28/Q-8/Q-9 (5 real Claude claude-sonnet-5-5 outreach drafts in 2.2-4.8s, each containing $1,090, '3 slots' and the full /s/shipready-sprint link, with no guarantee, income or testimonial wording; I read them by hand and they are honest); JRN-29/30/31 via the API (edit persists; approve sets approved_at; an edit after approve goes back to draft; discard makes approve and edit return 409; the status filter works); JRN-32 delivery note for 6afb39fb52e65336214190c9 contains SR-MT571NK8WMPZ and the /p/SR-MT571NK8WMPZ link, and a non-paid order returns 409; Q-10 (orders, ledger, certs, ship counters, slot_ops and inbox counts are identical before and after the outreach and delivery actions); JRN-35 checklist keys and order. Frontend (Playwright): login; desk Go-live checklist shows 4 items with live key 'no'; the desk 'Write delivery note' button produces a delivery draft with the code and link; /desk/drafts paste shows the notice; UI AI failure via route header injection shows draft-error-message and adds no card; Write outreach shows the draft in 3.8s; edit, Save and reload persists; Approve shows 'approved' and the Copy button; Discard shows 'discarded' with the textarea disabled; no horizontal overflow at 390px. JRN-36 was run last: Cancel keeps the data; Confirm brings desk closes to 0, contribution to $0.00 and the orders list to empty; the store shows '3 of 3 open'; /proof shows the empty state; delivery drafts are removed. In the DB, counters.test is 0/0, counters.live is unchanged at 0/0, slot_ops is empty, and the 2 livemode inbox docs are kept. One functional issue found: the Go-live 'Last live webhook received' item shows 'yes' in TEST mode.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/webhooks/stripe (meta.live_last_at) and GET /api/desk/status go_live_checklist.live_webhook", "issue": "Any verified event with livemode=true sets meta.webhook.live_last_at, even in TEST mode, where the event is a mismatch that is recorded as unresolved and books nothing. The Phase 1 sim '--livemode' mismatch test (signed with the TEST whsec) flipped the checklist to 'Last live webhook received: yes' (2026-11-16T17:43:34 checkout.session.completed). The value is misleading, and Reset test data does not clear it. Fix: set live_last_at only when MODE=='live' (or only when a livemode event was actually accepted), and/or have reset-test unset it when MODE=='test'."},
+      {"endpoint": "POST /api/desk/prospects/{id}/outreach", "issue": "If the ship doc is missing, ship.get(...) on None returns 500 (no guard). This is an edge case."},
+      {"endpoint": "Outreach prompt", "issue": "Drafts include the open-slot count at writing time ('2 currently open'). A saved or approved draft can go stale after sales or a reset (all existing drafts now say 2 open while the store shows 3 of 3). Consider leaving out the live open count or flagging it."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/desk/drafts", "issues": ["The prospects textarea placeholder ('alice | replied twice / bob | runs an agency') is light grey and close to the colour of real input, so it can be mistaken for content. Consider a dimmer placeholder colour.", "Grammar: '1 lines skipped' (this matches the spec string, so it is optional)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_shipready_phase2_drafts.py", "/app/backend/tests/test_shipready_phase1.py", "/app/test_reports/pytest/phase2_drafts.xml", "/app/test_reports/pytest/phase1_regression.xml"],
+  "action_items": [
+    "Do not set meta.webhook.live_last_at for livemode events while MODE=='test' (or only when they are accepted), and clear it in reset-test. Currently the Go-live 'Last live webhook received' item shows 'yes' in test mode.",
+    "Optional: add a 404/500 guard when the ship doc is missing in write_outreach.",
+    "Optional: leave the live open-slot count out of outreach drafts, since it goes stale."
+  ],
+  "critical_code_review_comments": [
+    "drafts.py honesty: the server-side check requires price, slots and link and applies the FORBIDDEN regex, with one retry and then 503. This is good. The regex does not cover 'ROI', 'results'/'outcome' promises or invented social proof such as 'clients'; the system prompt handles those. All 6 real drafts I read were clean, and one even said 'I can't promise any particular outcome'.",
+    "drafts.py only writes to the prospects and drafts collections. Q-10 was verified empirically (snapshot unchanged).",
+    "proof(): q={'mode':'live'} when MODE=='live', else all. This is correct by code review; live mode could not be exercised.",
+    "reset_test_data: deletes orders, ledger and certs with mode=test, inbox with livemode False, refund_requests and delivery drafts by test order ids; resets counters.test and pulls the slot_ops keys, all under LOCK. It correctly leaves live alone. Outreach drafts and prospects are kept, which is reasonable. Unresolved livemode inbox entries from the sim remain (2), which is consistent with 'live untouched'.",
+    "There is no delete endpoint for drafts (only discard). That is acceptable, but the outbox will grow forever."
+  ],
+  "updated_files": ["/app/backend/tests/test_shipready_phase2_drafts.py (new)"],
+  "success_rate": {"backend": "100% (Phase 1 11/11, Phase 2 21/21)", "frontend": "100% of tested journeys (JRN-27..37); 1 minor checklist correctness issue"},
+  "seed_data_creation": "I created prospects TEST_alice, TEST_bob, TEST_p0-2, TEST_ui_alice and TEST_ui_bob, and deleted them all by id. I created 6 outreach drafts (targets TEST_*); there is no delete endpoint, so they remain (1 discarded). I left the main agent's alice/bob prospects alone. Phase 1 regression created test orders, which were then wiped by the final UI reset (52 orders, 39 ledger rows, 12 certs). Final state: 0 orders, 0 ledger rows, 0 certs, counters test 0/0 and live 0/0, store 3 of 3 open, /proof empty, 2 livemode (sim) unresolved inbox docs kept. The main agent's paid order 6afb39fb52e65336214190c9 was a test order and was deleted by the reset, as requested.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run the suites serially with -n 0. Phase 2 suite: pytest tests/test_shipready_phase2_drafts.py -n 0 -v -s. test_delivery_note_paid_order skips if there is no paid order (none exists after the reset); create one via checkout plus stripe_sim paid if needed. Reset-test is destructive, so it is only covered via the UI as the last step. Claude drafts take about 2-5s.",
+  "rca of the issue": "live_webhook 'yes' in test mode: server.py line ~221 sets live = {live_last_at...} whenever event.livemode is true, before any mode check. Reproduce: python /app/scripts/stripe_sim.py paid <orderId> --livemode in TEST mode, then GET /api/desk/status gives go_live_checklist.live_webhook.ok == true. Mitigation: guard with MODE == 'live'."
+}

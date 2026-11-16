@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="11" time="101.629" timestamp="2026-11-16T17:21:47.963961+00:00" hostname="agent-env-9dabf7e9-a6d2-4d9e-ac74-bef1e6fb6463"><testcase classname="tests.test_shipready_phase1" name="test_health_openapi_money" time="0.975" /><testcase classname="tests.test_shipready_phase1" name="test_ship_and_404" time="0.426" /><testcase classname="tests.test_shipready_phase1" name="test_desk_unauth_401" time="1.231" /><testcase classname="tests.test_shipready_phase1" name="test_login_wrong_secret_and_cookie" time="0.535" /><testcase classname="tests.test_shipready_phase1" name="test_checkout_idem_and_validation" time="2.226" /><testcase classname="tests.test_shipready_phase1" name="test_bad_sig_and_unknown_pi" time="60.491"><failure message="subprocess.TimeoutExpired: Command '['/root/.venv/bin/python', '/app/scripts/stripe_sim.py', 'unknown-pi']' timed out after 60 seconds">tests/test_shipready_phase1.py:151: in test_bad_sig_and_unknown_pi
+    text, first = sim("unknown-pi")
+                  ^^^^^^^^^^^^^^^^^
+tests/test_shipready_phase1.py:33: in sim
+    out = subprocess.run([sys.executable, SIM, *args], capture_output=True, text=True, timeout=60)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/subprocess.py:550: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/subprocess.py:1209: in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/subprocess.py:2116: in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+/usr/local/lib/python3.11/subprocess.py:1253: in _check_timeout
+    raise TimeoutExpired(
+E   subprocess.TimeoutExpired: Command '['/root/.venv/bin/python', '/app/scripts/stripe_sim.py', 'unknown-pi']' timed out after 60 seconds</failure></testcase><testcase classname="tests.test_shipready_phase1" name="test_full_money_flow" time="14.579" /><testcase classname="tests.test_shipready_phase1" name="test_async_failed_releases" time="1.631" /><testcase classname="tests.test_shipready_phase1" name="test_sweep_expires" time="1.007" /><testcase classname="tests.test_shipready_phase1" name="test_concurrent_no_oversell" time="2.762" /><testcase classname="tests.test_shipready_phase1" name="test_real_refund_flow" time="15.560" /></testsuite></testsuites>

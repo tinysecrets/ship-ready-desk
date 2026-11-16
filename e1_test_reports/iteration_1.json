@@ -1,0 +1,21 @@
+{
+  "passed": 11,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "notes": "8 criteria covered. Suite: cd /app/backend && python -m pytest -q -p no:cacheprovider e1_tests -n0 -> 14 passed (serial and xdist). The test orders I created were released afterwards (expired or refunded); capacity is back to 2 of 3 open. The browser checkout check was re-authored once to read the session id from the Stripe URL instead of the navigated-away response (that was a problem in my test, not an app bug). The refund test uses a real Stripe PaymentIntent (real-pay), and Stripe delivered the refund webhooks.",
+  "checks": [
+    {"criterion": "JRN-1,2,23,24,26 public pages", "name": "public-pages-landing-store-proof", "lane": "browser", "status": "passed", "evidence": "Preview URL at 390px: headline, $1,090.00 and $1,038.09 shown; Take a slot goes to /s/shipready-sprint; badge reads 'N of 3 open'; proof list visible; /p/SR-TSCHECKNOPE0 and /s/tscheck-nope show 'Nothing at this address.'; scrollWidth<=390"},
+    {"criterion": "JRN-1,2,23,24,26 public pages", "name": "test_tscheck_public_api.py::test_ship_and_404", "lane": "backend", "status": "passed", "evidence": "GET /api/ships/shipready-sprint 200 slots=3 price=109000 mode=test; unknown ship/cert 404; /api/proof has certificates"},
+    {"criterion": "JRN-3,4,5,6 checkout and capacity", "name": "store-checkout-redirects-stripe", "lane": "browser", "status": "passed", "evidence": "Clicking store-checkout-button redirected to checkout.stripe.com (cs_test_...); the order was reserved with the slot held (then expired by tester)"},
+    {"criterion": "JRN-3,4,5,6 checkout and capacity", "name": "test_tscheck_checkout_capacity.py", "lane": "backend", "status": "passed", "evidence": "Same x-idem-key -> same orderId and sessionId; no key -> 400 'x-idem-key header (8-128 chars) required'; 8 concurrent -> only 200/409, 409 present, reserved+sold <= 3"},
+    {"criterion": "JRN-7,8,9,10,11 webhook booking", "name": "test_tscheck_webhook_booking.py", "lane": "backend", "status": "passed", "evidence": "Paid event plus 5 replays -> 1 charge row and cert SR-[A-Z0-9]{12} not revoked; bad-sig -> 400; amount/currency/namespace mismatch -> no ledger rows and not paid; unknown-pi -> 200 unresolved"},
+    {"criterion": "JRN-12,13,14 expiry and sweep", "name": "test_tscheck_expiry_sweep.py", "lane": "backend", "status": "passed", "evidence": "checkout.session.expired and async_payment_failed -> state expired, slot released; stale hold (-46min) plus POST /api/desk/sweep -> expired/released"},
+    {"criterion": "JRN-15,16,17 operator access", "name": "operator-access-desk", "lane": "browser", "status": "passed", "evidence": "/desk redirects to /access; wrong secret shows 'Wrong secret.'; correct secret opens the desk with TEST, target $1,000.00 and a webhook URL ending /api/webhooks/stripe"},
+    {"criterion": "JRN-15,16,17 operator access", "name": "test_tscheck_operator_access.py", "lane": "backend", "status": "passed", "evidence": "/api/auth/me and /api/desk/{summary,orders,status} -> 401 without cookie; wrong login rejected; status mode=test, webhook_url ends /api/webhooks/stripe; target_cents=100000"},
+    {"criterion": "JRN-18,19,20,21 refunds", "name": "test_tscheck_refunds.py", "lane": "backend", "status": "passed", "evidence": "Real PI: partial 10000 -> one -10000 row, state paid; same idem key -> replayed with same refund_id; 999999 capped to 99000 (capped=true); state refunded, slot released, cert revoked; order contribution = -5191"},
+    {"criterion": "JRN-22 disputes", "name": "test_tscheck_disputes.py", "lane": "backend", "status": "passed", "evidence": "After a 9000 refund, dispute 109000 booked -100000 (capped); dispute.closed won booked +100000; net disputes 0"},
+    {"criterion": "JRN-25 health/openapi", "name": "test_tscheck_public_api.py::test_health_openapi", "lane": "backend", "status": "passed", "evidence": "GET /api/health {ok:true}; /api/openapi.json parses and has paths"}
+  ]
+}
