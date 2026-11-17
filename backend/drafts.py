@@ -4,14 +4,14 @@ import re
 from typing import Optional
 
 from bson import ObjectId
-from emergentintegrations.llm.chat import LlmChat, StreamDone, TextDelta, UserMessage
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from pymongo import ReturnDocument
 
 import money
 from auth import require_operator
-from config import DRAFTS_MODEL, EMERGENT_LLM_KEY
+from config import LLM_BASE_URL, LLM_MODEL, LLM_API_KEY
 from db import BaseDocument, PyObjectId, db, now
 from datetime import datetime
 
@@ -41,6 +41,10 @@ class Draft(BaseDocument):
     approved_at: Optional[datetime] = None
 
 
+
+
+
+
 def oid(value: str) -> ObjectId:
     if not ObjectId.is_valid(value):
         raise HTTPException(404, "not found")
@@ -66,14 +70,34 @@ def parse_prospects(text: str) -> tuple[list[tuple[str, str]], int]:
 
 
 async def generate(system: str, prompt: str, session_id: str) -> str:
-    chat = LlmChat(api_key=EMERGENT_LLM_KEY, session_id=session_id, system_message=system).with_model("anthropic", DRAFTS_MODEL)
-    parts = []
-    async for ev in chat.stream_message(UserMessage(text=prompt)):
-        if isinstance(ev, TextDelta):
-            parts.append(ev.content)
-        elif isinstance(ev, StreamDone):
-            break
-    return "".join(parts).strip()
+    if not LLM_API_KEY.strip():
+        raise HTTPException(503, "LLM credentials not configured")
+    try:
+        async with AsyncOpenAI(
+            base_url=LLM_BASE_URL,
+            api_key=LLM_API_KEY,
+            timeout=120.0,
+            max_retries=1,
+        ) as client:
+            response = await client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt},
+                ],
+            )
+        content = (
+            response.choices[0].message.content
+            if response.choices else None
+        )
+        if not isinstance(content, str) or not content.strip():
+            raise HTTPException(503, FAILED)
+        return content.strip()
+    except HTTPException:
+        raise
+    except Exception:
+        log.warning("draft generation failed")
+        raise HTTPException(503, FAILED) from None
 
 
 async def write_checked(system: str, prompt: str, session_id: str, required: list[str], simulate_fail: bool) -> str:
@@ -82,8 +106,10 @@ async def write_checked(system: str, prompt: str, session_id: str, required: lis
     for attempt in range(2):
         try:
             text = await generate(system, prompt, f"{session_id}:{attempt}")
+        except HTTPException:
+            raise
         except Exception as exc:
-            log.warning("draft generation failed: %s", exc)
+            log.warning("draft generation failed")
             raise HTTPException(503, FAILED)
         missing = [r for r in required if r not in text]
         if text and not missing and not FORBIDDEN.search(text):
@@ -95,7 +121,7 @@ async def write_checked(system: str, prompt: str, session_id: str, required: lis
 
 async def save_draft(kind: str, target: str, ref_id, text: str) -> dict:
     t = now()
-    d = Draft(kind=kind, target=target, ref_id=str(ref_id), text=text, model=DRAFTS_MODEL, created_at=t, updated_at=t).to_mongo()
+    d = Draft(kind=kind, target=target, ref_id=str(ref_id), text=text, model=LLM_MODEL, created_at=t, updated_at=t).to_mongo()
     await db.drafts.insert_one(d)
     return Draft.from_mongo(d).model_dump()
 
